@@ -3,6 +3,9 @@
   "description": "A discord Node.js music bot app",
   "repository": "https://github.com/mrsmook/music-discord-heroku-bot",
   "logo": "https://img.icons8.com/color/452/nodejs.png",
+    "engines": {
+    "node": "~15.10.0"
+  },
   "keywords": ["node", "discord", "youtube"],
   "env": {
     "DISCORD_TOKEN": {
