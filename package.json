@@ -1,6 +1,6 @@
 {
   "name": "discord-music-bot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Very simple discord music bot with the discordjs.guide command handler for easy learning and adapting.",
   "main": "src/index.js",
   "author": "MrSmooK <mrsmook.dev@gmail.com>",
@@ -16,16 +16,6 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "eslint": "^7.10.0",
-    "eslint-config-aqua": "^7.3.0",
     "nodemon": "^2.0.7"
-  },
-  "eslintConfig": {
-    "extends": "aqua/node"
-  },
-  "renovate": {
-    "extends": [
-      "teal"
-    ]
   }
 }
