@@ -18,10 +18,18 @@ for (const file of commandFiles)
     client.commands.set(command.name, command);
 }
 */
-let currentBetMessage = null;
-let content = "";
+let currentBetMessage, content, affirmativeUsers, negativeUsers;
+
+function resetBet() {
+  currentBetMessage = null;
+  content = "";
+  affirmativeUsers = [];
+  negativeUsers = [];
+}
+
 let affirmatives = ["yes", "true", "for", "affirmative"];
 let negatives = ["no", "false", "against", "negative"];
+
 client.once("ready", () => console.log("READY!"));
 client.on("message", (message) => {
   // ***************** custom code starts here *********************************************
@@ -33,7 +41,6 @@ client.on("message", (message) => {
 
       const NUMERIC_REGEXP = /[-]{0,1}[\d]*[.]{0,1}[\d]+/g;
 
-      console.log("yes0");
       let potentialBetValues = message.content.match(NUMERIC_REGEXP);
       let betValue = 1;
       if (potentialBetValues && potentialBetValues.length > 0) {
@@ -42,7 +49,6 @@ client.on("message", (message) => {
       else {
         // no bet value, default to 1?
       }
-      console.log("yes");
       let wasResponseAffirmative = -1;
       for (let affirmative of affirmatives) {
         if (message.content.indexOf(affirmative) >= 0) {
@@ -53,11 +59,9 @@ client.on("message", (message) => {
       for (let negative of negatives) {
         if (message.content.indexOf(negative) >= 0) {
           wasResponseAffirmative = false;
-          console.log("yes1.999");
           break;
         }
       }
-      console.log("yes2");
 
       if (wasResponseAffirmative != -1) {
         message.channel.send(`${message.author.username} bets ${betValue} ${_.shuffle(["smackeroos", "dingus dollars", "dollars"])[0]} ${wasResponseAffirmative ? "for" : "against"} ${content}`);
@@ -89,27 +93,50 @@ client.on("message", (message) => {
           message.channel.send(
             `votes are closed!`
           );
-          try {
-            for (let key of ["👍", "👎"]) {
-              console.log(key);
-              if (collected.get(key) === undefined) continue;
-              let users = await collected.get(key).users.fetch();
-              console.log(users);
-              let usernames = "";
-              for (const key2 of users.keys()) {
-                usernames += users.get(key2).username + ", ";
-              }
-              message.channel.send(
-                key + " " + (users.size - 1) + ": " + usernames
-              );
-            }
-          } catch (e) {
-            message.channel.send(
-              `error! bets are off for: ${splitContent[0]} vs ${splitContent[1]}`
-            );
-            console.log("emoji collection error");
-            console.log(e);
-          }
+          //     betObject = {
+              //     type: "choose1",
+              //     originalMessage: originalMessageObj,
+              //     betOptions ["yes", "no", "pnastayyy"],
+              //     participants [ 
+              //        {
+              //          betOptionIdx,
+              //          wagerAmount,
+              //          fullMessageObj
+              //        } ...
+              //      ]
+              // }
+
+          // // this function should calculate the transactions that should happen
+          // // based on the bet outcome and then execute them on a database
+
+          // // each user has an absolute balance, and also a relative balance for each user
+          // writeFinishedBetToLedger(betObject);
+          
+          // // allow "non bet" settlements for user to user debt adjustment
+          // addSettlement(fromUserId, toUserId, amount);
+
+          // // checking what your ledger looks like
+          // getLedgerRelationship(userid1, userid2);
+          // getAllLedgerRelationships(userid);
+
+          resetBet();
+          // try {
+          //   for (let key of ["👍", "👎"]) {
+          //     if (collected.get(key) === undefined) continue;
+          //     let users = await collected.get(key).users.fetch();
+          //     let usernames = "";
+          //     for (const key2 of users.keys()) {
+          //       usernames += users.get(key2).username + ", ";
+          //     }
+          //     message.channel.send(
+          //       key + " " + (users.size - 1) + ": " + usernames
+          //     );
+          //   }
+          // } catch (e) {
+          //   message.channel.send(
+          //     `error! bets are off for: ${splitContent[0]} vs ${splitContent[1]}`
+          //   );
+          // }
         });
       })
       .catch(console.error);
