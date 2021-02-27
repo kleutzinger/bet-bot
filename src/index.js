@@ -9,6 +9,7 @@ const {
   join
 } = require("path");
 const MusicClient = require("./struct/Client");
+const Bet = require("./struct/Bet");
 const {
   Collection
 } = require("discord.js");
@@ -23,59 +24,18 @@ const command = require(join(__dirname, 'commands', `${file}`));
 client.commands.set(command.name, command);
 }
  */
-let currentBetMessage, currentResolveBetMessage, content, affirmativeUsers, negativeUsers;
-
-function resetBet() {
-  currentBetMessage = null;
-  currentResolveBetMessage = null;
-  content = "";
-  affirmativeUsers = [];
-  negativeUsers = [];
-}
-resetBet();
-
-let affirmatives = ["yes", "true", "for", "affirmative"];
-let negatives = ["no", "false", "against", "negative"];
+let currentBet = null;
+let currentBetMessage = null;
 
 client.once("ready", () => console.log("READY!"));
 client.on("message", (message) => {
   // ***************** custom code starts here *********************************************
 
-  if (currentBetMessage != null) {
+  if (currentBet != null) {
     if (message.reference != null
        && message.reference.messageID != null
        && message.reference.messageID == currentBetMessage.id) {
-
-      const NUMERIC_REGEXP = /[-]{0,1}[\d]*[.]{0,1}[\d]+/g;
-
-      let potentialBetValues = message.content.match(NUMERIC_REGEXP);
-      let betValue = 1;
-      if (potentialBetValues && potentialBetValues.length > 0) {
-        betValue = potentialBetValues[0];
-      } else {
-        // no bet value, default to 1?
-      }
-      let wasResponseAffirmative = -1;
-      for (let affirmative of affirmatives) {
-        if (message.content.indexOf(affirmative) >= 0) {
-          wasResponseAffirmative = true;
-          affirmativeUsers.push(message.user.id);
-          _.remove(negativeUsers, message.user.id);
-          break;
-        }
-      }
-      for (let negative of negatives) {
-        if (message.content.indexOf(negative) >= 0) {
-          wasResponseAffirmative = false;
-          negativeUsers.push(message.user.id);
-          _.remove(affirmativeUsers, message.user.id);
-          break;
-        }
-      }
-
-      if (wasResponseAffirmative != -1) {
-        message.channel.send(`${message.author.username} bets ${betValue} ${_.shuffle(["smackeroos", "dingus dollars", "dollars"])[0]} ${wasResponseAffirmative ? "for" : "against"} ${content}`);
-      }
+      currentBet.processResponse(message.content, message.author);  
     }
   }
 
@@ -87,61 +47,57 @@ client.on("message", (message) => {
     let time = 60000;
     content = message.content
       .slice(5, message.content.length);
+    currentBet = new Bet(content, message.author,
+      (s, type) => {
+          return message.channel.send(s).then((m) => {
+            if (type == "initial") currentBetMessage = m;
+            if (type == "closed") {
+              const filter = (reaction, user) => !user.bot;
+              const collector = m.createReactionCollector(filter, {time:4000});
 
-    message.channel
-    .send(
-      `respond "yes" or "no" to this message with a number to join the betting pool. ${message.author.username} says: ${content}\nvotes close in ${time / 1000} seconds`) 
-    .then((newMessage) => {
-      currentBetMessage = newMessage;
+              collector.on("collect", (reaction, user) => {
+                m.channel.send("got reaction");
+              });
 
-      setTimeout(function () {
-        message.channel.send(
-          `votes are closed! all voters must react either 👍 or 👎 to confirm the results of the bet.`)
-        .then((closedMessage) => { 
-          const filter = (reaction, user) => !user.bot;
-          const collector = newMessage.createReactionCollector(filter);
-
-          collector.on("collect", (reaction, user) => {
-
-          });
-
-          collector.on("end", (collected) => {
-            resetBet();
-          });
+              collector.on("end", (collected) => {
+                // resetBet();
+              });
+            }
+          })
         });
-      }, time);
 
-      // // this function should calculate the transactions that should happen
-      // // based on the bet outcome and then execute them on a database
 
-      // // each user has an absolute balance, and also a relative balance for each user
-      // writeFinishedBetToLedger(betObject);
+  //     // // this function should calculate the transactions that should happen
+  //     // // based on the bet outcome and then execute them on a database
 
-      // // allow "non bet" settlements for user to user debt adjustment
-      // addSettlement(fromUserId, toUserId, amount);
+  //     // // each user has an absolute balance, and also a relative balance for each user
+  //     // writeFinishedBetToLedger(betObject);
 
-      // // checking what your ledger looks like
-      // getLedgerRelationship(userid1, userid2);
-      // getAllLedgerRelationships(userid);
+  //     // // allow "non bet" settlements for user to user debt adjustment
+  //     // addSettlement(fromUserId, toUserId, amount);
 
-      // try {
-      //   for (let key of ["👍", "👎"]) {
-      //     if (collected.get(key) === undefined) continue;
-      //     let users = await collected.get(key).users.fetch();
-      //     let usernames = "";
-      //     for (const key2 of users.keys()) {
-      //       usernames += users.get(key2).username + ", ";
-      //     }
-      //     message.channel.send(
-      //       key + " " + (users.size - 1) + ": " + usernames
-      //     );
-      //   }
-      // } catch (e) {
-      //   message.channel.send(
-      //     `error! bets are off for: ${splitContent[0]} vs ${splitContent[1]}`
-      //   );
-      // }
-    });
+  //     // // checking what your ledger looks like
+  //     // getLedgerRelationship(userid1, userid2);
+  //     // getAllLedgerRelationships(userid);
+
+  //     // try {
+  //     //   for (let key of ["👍", "👎"]) {
+  //     //     if (collected.get(key) === undefined) continue;
+  //     //     let users = await collected.get(key).users.fetch();
+  //     //     let usernames = "";
+  //     //     for (const key2 of users.keys()) {
+  //     //       usernames += users.get(key2).username + ", ";
+  //     //     }
+  //     //     message.channel.send(
+  //     //       key + " " + (users.size - 1) + ": " + usernames
+  //     //     );
+  //     //   }
+  //     // } catch (e) {
+  //     //   message.channel.send(
+  //     //     `error! bets are off for: ${splitContent[0]} vs ${splitContent[1]}`
+  //     //   );
+  //     // }
+  //   });
   }
 
   // ***************** custom code ends here *********************************************
