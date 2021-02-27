@@ -35,39 +35,41 @@ client.on('message', message =>
 
     if (message.content.startsWith("!bet"))
     {
-    	let splitContent = message.content.slice(4,message.content.length).split(",");
+        let time = 60000;
+    	let splitContent = message.content.slice(5,message.content.length).split(",");
     	if (splitContent.length <= 1) {
-    		splitContent = message.content.slice(4,message.content.length).split(" ");
-    		if (splitContent.length <= 1) return;
+    		splitContent = message.content.slice(5,message.content.length).split(" ");
+    		if (splitContent.length <= 1) {
+    			message.channel.send("bad syntax! do: `!bet fox, falco`")
+    			return;
+    		}
     	}
     	console.log(message);
     	console.log(message.content);
-        message.channel.send(`react 👍 for ${splitContent[0]} or 👎 for ${splitContent[1]}`)
+        message.channel.send(`react 👍 for ${splitContent[0]} or 👎 for ${splitContent[1]}.\nvotes close in ${time/1000} seconds`)
         .then(newMessage =>
         {
         	newMessage.react("👍");
         	newMessage.react("👎");
 			const filter = (reaction, user) => !user.bot;
-			const collector = newMessage.createReactionCollector(filter, { time: 7000 });
+			const collector = newMessage.createReactionCollector(filter, { time: time });
 			// collector.on('collect', r => {
    //      		console.log(r.users.fetch());
 			// 	console.log(`Collected ${r.emoji.name}`);
 			// });
 			collector.on('end', async collected => {
-				console.log(`Collected ${collected.size} items`)
-				console.log(collected);
+				message.channel.send(`votes are closed! ${splitContent[0]} vs ${splitContent[1]}`);
 				try {
 					for (let key of ["👍", "👎"]) {
 						console.log(key);
 						if (collected.get(key) === undefined) continue;
 						let users = await collected.get(key).users.fetch();
 						console.log(users);
-						if (key == "👍") {
-							message.channel.send("👍 " + (users.size - 1));
+						let usernames = "";
+						for (const key2 of users.keys()){
+							usernames += users.get(key2).username + ", "; 
 						}
-						if (key == "👎") {
-							message.channel.send("👎 " + (users.size - 1));
-						}
+						message.channel.send(key + " " + (users.size - 1) + ": " + usernames);
 					}
 				}
 				catch (e) {
