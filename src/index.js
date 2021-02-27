@@ -2,30 +2,37 @@ require("dotenv").config();
 
 const _ = require("lodash");
 
-const { readdirSync } = require("fs");
-const { join } = require("path");
+const {
+  readdirSync
+} = require("fs");
+const {
+  join
+} = require("path");
 const MusicClient = require("./struct/Client");
-const { Collection } = require("discord.js");
+const {
+  Collection
+} = require("discord.js");
 const client = new MusicClient({
-  token: process.env.DISCORD_TOKEN,
-  prefix: process.env.DISCORD_PREFIX,
-});
+    token: process.env.DISCORD_TOKEN,
+    prefix: process.env.DISCORD_PREFIX,
+  });
 /*
 const commandFiles = readdirSync(join(__dirname, 'commands')).filter(file => file.endsWith('.js'));
-for (const file of commandFiles)
-{
-    const command = require(join(__dirname, 'commands', `${file}`));
-    client.commands.set(command.name, command);
+for (const file of commandFiles){
+const command = require(join(__dirname, 'commands', `${file}`));
+client.commands.set(command.name, command);
 }
-*/
-let currentBetMessage, content, affirmativeUsers, negativeUsers;
+ */
+let currentBetMessage, currentResolveBetMessage, content, affirmativeUsers, negativeUsers;
 
 function resetBet() {
   currentBetMessage = null;
+  currentResolveBetMessage = null;
   content = "";
   affirmativeUsers = [];
   negativeUsers = [];
 }
+resetBet();
 
 let affirmatives = ["yes", "true", "for", "affirmative"];
 let negatives = ["no", "false", "against", "negative"];
@@ -36,8 +43,8 @@ client.on("message", (message) => {
 
   if (currentBetMessage != null) {
     if (message.reference != null
-        && message.reference.messageID != null
-        && message.reference.messageID == currentBetMessage.id) {
+       && message.reference.messageID != null
+       && message.reference.messageID == currentBetMessage.id) {
 
       const NUMERIC_REGEXP = /[-]{0,1}[\d]*[.]{0,1}[\d]+/g;
 
@@ -45,20 +52,23 @@ client.on("message", (message) => {
       let betValue = 1;
       if (potentialBetValues && potentialBetValues.length > 0) {
         betValue = potentialBetValues[0];
-      }
-      else {
+      } else {
         // no bet value, default to 1?
       }
       let wasResponseAffirmative = -1;
       for (let affirmative of affirmatives) {
         if (message.content.indexOf(affirmative) >= 0) {
           wasResponseAffirmative = true;
+          affirmativeUsers.push(message.user.id);
+          _.remove(negativeUsers, message.user.id);
           break;
         }
       }
       for (let negative of negatives) {
         if (message.content.indexOf(negative) >= 0) {
           wasResponseAffirmative = false;
+          negativeUsers.push(message.user.id);
+          _.remove(affirmativeUsers, message.user.id);
           break;
         }
       }
@@ -69,7 +79,7 @@ client.on("message", (message) => {
     }
   }
 
-  if (message.content.startsWith("!bet")) {
+  if (message.content.startsWith("!!bet")) {
     if (currentBetMessage != null) {
       message.channel.send("hey there's already a bet going");
       return;
@@ -79,67 +89,59 @@ client.on("message", (message) => {
       .slice(5, message.content.length);
 
     message.channel
-      .send(
-        `respond "yes" or "no" to this message with a number to join the betting pool. ${message.author.username} says: ${content}\nvotes close in ${time / 1000} seconds`
-      )
-      .then((newMessage) => {
-        currentBetMessage = newMessage;
-        const filter = (reaction, user) => !user.bot;
-        const collector = newMessage.createReactionCollector(filter, {
-          time: time,
+    .send(
+      `respond "yes" or "no" to this message with a number to join the betting pool. ${message.author.username} says: ${content}\nvotes close in ${time / 1000} seconds`) 
+    .then((newMessage) => {
+      currentBetMessage = newMessage;
+
+      setTimeout(function () {
+        message.channel.send(
+          `votes are closed! all voters must react either 👍 or 👎 to confirm the results of the bet.`)
+        .then((closedMessage) => { 
+          const filter = (reaction, user) => !user.bot;
+          const collector = newMessage.createReactionCollector(filter);
+
+          collector.on("collect", (reaction, user) => {
+
+          });
+
+          collector.on("end", (collected) => {
+            resetBet();
+          });
         });
+      }, time);
 
-        collector.on("end", async (collected) => {
-          message.channel.send(
-            `votes are closed!`
-          );
-          //     betObject = {
-              //     type: "choose1",
-              //     originalMessage: originalMessageObj,
-              //     betOptions ["yes", "no", "pnastayyy"],
-              //     participants [ 
-              //        {
-              //          betOptionIdx,
-              //          wagerAmount,
-              //          fullMessageObj
-              //        } ...
-              //      ]
-              // }
+      // // this function should calculate the transactions that should happen
+      // // based on the bet outcome and then execute them on a database
 
-          // // this function should calculate the transactions that should happen
-          // // based on the bet outcome and then execute them on a database
+      // // each user has an absolute balance, and also a relative balance for each user
+      // writeFinishedBetToLedger(betObject);
 
-          // // each user has an absolute balance, and also a relative balance for each user
-          // writeFinishedBetToLedger(betObject);
-          
-          // // allow "non bet" settlements for user to user debt adjustment
-          // addSettlement(fromUserId, toUserId, amount);
+      // // allow "non bet" settlements for user to user debt adjustment
+      // addSettlement(fromUserId, toUserId, amount);
 
-          // // checking what your ledger looks like
-          // getLedgerRelationship(userid1, userid2);
-          // getAllLedgerRelationships(userid);
+      // // checking what your ledger looks like
+      // getLedgerRelationship(userid1, userid2);
+      // getAllLedgerRelationships(userid);
 
-          resetBet();
-          // try {
-          //   for (let key of ["👍", "👎"]) {
-          //     if (collected.get(key) === undefined) continue;
-          //     let users = await collected.get(key).users.fetch();
-          //     let usernames = "";
-          //     for (const key2 of users.keys()) {
-          //       usernames += users.get(key2).username + ", ";
-          //     }
-          //     message.channel.send(
-          //       key + " " + (users.size - 1) + ": " + usernames
-          //     );
-          //   }
-          // } catch (e) {
-          //   message.channel.send(
-          //     `error! bets are off for: ${splitContent[0]} vs ${splitContent[1]}`
-          //   );
-          // }
-        });
-      })
-      .catch(console.error);
+      // try {
+      //   for (let key of ["👍", "👎"]) {
+      //     if (collected.get(key) === undefined) continue;
+      //     let users = await collected.get(key).users.fetch();
+      //     let usernames = "";
+      //     for (const key2 of users.keys()) {
+      //       usernames += users.get(key2).username + ", ";
+      //     }
+      //     message.channel.send(
+      //       key + " " + (users.size - 1) + ": " + usernames
+      //     );
+      //   }
+      // } catch (e) {
+      //   message.channel.send(
+      //     `error! bets are off for: ${splitContent[0]} vs ${splitContent[1]}`
+      //   );
+      // }
+    });
   }
 
   // ***************** custom code ends here *********************************************
@@ -150,9 +152,9 @@ client.on("message", (message) => {
   const command =
     client.commands.get(commandName) ||
     client.commands.find(
-      (cmd) => cmd.aliases && cmd.aliases.includes(commandName)
-    );
-  if (!command) return;
+      (cmd) => cmd.aliases && cmd.aliases.includes(commandName));
+  if (!command)
+    return;
   if (command.guildOnly && message.channel.type !== "text")
     return message.reply("I can't execute that command inside DMs!");
   if (command.args && !args.length) {
@@ -174,8 +176,7 @@ client.on("message", (message) => {
       return message.reply(
         `please wait ${timeLeft.toFixed(
           1
-        )} more second(s) before reusing the \`${command.name}\` command.`
-      );
+        )} more second(s) before reusing the \`${command.name}\` command.`);
     }
   }
   timestamps.set(message.author.id, now);
