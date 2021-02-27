@@ -18,46 +18,76 @@ for (const file of commandFiles)
     client.commands.set(command.name, command);
 }
 */
+let currentBetMessage = null;
+let content = "";
+let affirmatives = ["yes", "true", "for", "affirmative"];
+let negatives = ["no", "false", "against", "negative"];
 client.once("ready", () => console.log("READY!"));
 client.on("message", (message) => {
   // ***************** custom code starts here *********************************************
 
-  if (message.content.startsWith("!bet")) {
-    let time = 60000;
-    let splitContent = message.content
-      .slice(5, message.content.length)
-      .split(",");
-    if (splitContent.length <= 1) {
-      splitContent = message.content
-        .slice(5, message.content.length)
-        .split(" ");
-      if (splitContent.length <= 1) {
-        message.channel.send("bad syntax! do: `!bet fox, falco`");
-        return;
+  if (currentBetMessage != null) {
+    if (message.reference != null
+        && message.reference.messageID != null
+        && message.reference.messageID == currentBetMessage.id) {
+
+      const NUMERIC_REGEXP = /[-]{0,1}[\d]*[.]{0,1}[\d]+/g;
+
+      console.log("yes0");
+      let potentialBetValues = message.content.match(NUMERIC_REGEXP);
+      let betValue = 1;
+      if (potentialBetValues && potentialBetValues.length > 0) {
+        betValue = potentialBetValues[0];
+      }
+      else {
+        // no bet value, default to 1?
+      }
+      console.log("yes");
+      let wasResponseAffirmative = -1;
+      for (let affirmative of affirmatives) {
+        if (message.content.indexOf(affirmative) >= 0) {
+          wasResponseAffirmative = true;
+          break;
+        }
+      }
+      for (let negative of negatives) {
+        if (message.content.indexOf(negative) >= 0) {
+          wasResponseAffirmative = false;
+          console.log("yes1.999");
+          break;
+        }
+      }
+      console.log("yes2");
+
+      if (wasResponseAffirmative != -1) {
+        message.channel.send(`${message.author.username} bets ${betValue} ${_.shuffle(["smackeroos", "dingus dollars", "dollars"])[0]} ${wasResponseAffirmative ? "for" : "against"} ${content}`);
       }
     }
-    console.log(message);
-    console.log(message.content);
+  }
+
+  if (message.content.startsWith("!!bet")) {
+    if (currentBetMessage != null) {
+      message.channel.send("hey there's already a bet going");
+      return;
+    }
+    let time = 60000;
+    content = message.content
+      .slice(5, message.content.length);
+
     message.channel
       .send(
-        `react 👍 for ${splitContent[0]} or 👎 for ${
-          splitContent[1]
-        }.\nvotes close in ${time / 1000} seconds`
+        `respond "yes" or "no" to this message with a number to join the betting pool. ${message.author.username} says: ${content}\nvotes close in ${time / 1000} seconds`
       )
       .then((newMessage) => {
-        newMessage.react("👍");
-        newMessage.react("👎");
+        currentBetMessage = newMessage;
         const filter = (reaction, user) => !user.bot;
         const collector = newMessage.createReactionCollector(filter, {
           time: time,
         });
-        // collector.on('collect', r => {
-        //      		console.log(r.users.fetch());
-        // 	console.log(`Collected ${r.emoji.name}`);
-        // });
+
         collector.on("end", async (collected) => {
           message.channel.send(
-            `votes are closed! ${splitContent[0]} vs ${splitContent[1]}`
+            `votes are closed!`
           );
           try {
             for (let key of ["👍", "👎"]) {
