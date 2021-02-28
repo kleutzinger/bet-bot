@@ -1,6 +1,10 @@
 require("dotenv").config();
 
 const _ = require("lodash");
+// push_one(key, val) -> append a string or stringified object to array at `key`
+// get_user(key)      -> get back string array at `key`
+// must manually stringify and JSON.parse objects
+const { push_one, get_user } = require("./api/api.js")
 
 const {
   readdirSync
