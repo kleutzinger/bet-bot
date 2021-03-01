@@ -1,11 +1,17 @@
 require("dotenv").config();
 
 const _ = require("lodash");
-// push_one(key, val) -> append a string or stringified object to array at `key`
-// get_user(key)      -> get back string array at `key`
-// must manually stringify and JSON.parse objects
-const { push_one, get_user } = require("./api/api.js")
 
+
+const api = require("./api/api.js");
+// feel free to delete example below
+async function test(){
+  console.log("Getting user keys (fake data) and all bets")
+  const users = await api.get_all_user_keys();
+  const bets = await api.get_resolved_bets();
+  console.log(users, "\n", bets)
+}
+test();
 const {
   readdirSync
 } = require("fs");
@@ -31,7 +37,7 @@ client.commands.set(command.name, command);
 let currentBet = null;
 let currentBetMessage = null;
 
-client.once("ready", () => console.log("READY!"));
+client.once("ready", () => console.log("Discord bot listening"));
 client.on("message", (message) => {
   // ***************** custom code starts here *********************************************
 

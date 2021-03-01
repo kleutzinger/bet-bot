@@ -1,74 +1,49 @@
-require("dotenv").config();
-const _ = require("lodash");
-var redis = require("promise-redis")();
-const client = redis.createClient(process.env.REDIS_URL);
-console.log(`connected to redis at ${process.env.REDIS_URL.split('@')[1]}`)
-const fs = require("fs");
+const db = require("./db.js");
+const GLOBAL_BETS_KEY = "global_bets";
 
-client.on("error", function (err) {
-  console.error("Redis Client Error: " + err);
-});
-
-function getUserTransactions(userid) {}
-
-function getRelative() {}
-
-function addUserTransaction(obj, userid) {}
-
-function ingestBet(betObject) {}
-
-async function push_one(key, value) {
-  // Stores Strings
+async function push_resolved_bet(betObj) {
   try {
-    return await client.rpush(key, value);
+    if (typeof betObj !== "string") {
+      betObj = JSON.stringify(betObj);
+    }
+    const data = await db.redis.rpush(GLOBAL_BETS_KEY, betObj);
+    return { data, out_str: `added 1 bet` };
   } catch (error) {
     console.error(error);
   }
 }
 
-async function get_user(key) {
-  // Returns array all pushed items
+async function get_resolved_bets() {
   try {
-    return await client.lrange(key, 0, -1);
+    const bet_list = await db.redis.lrange(GLOBAL_BETS_KEY, 0, -1);
+    const parsed_bet_list = bet_list.map((e) => JSON.parse(e));
+    const out_str = `found ${parsed_bet_list.length} resolved bets`;
+    return { data: parsed_bet_list, out_str };
   } catch (error) {
     console.error(error);
   }
 }
 
-async function test() {
-  const user = "kevin";
-  // can push number (becomes string)
-  await push_one(user, 88);
-  // can push strings directly
-  await push_one(user, "fo twenty");
-  // cannot push objects, must JSON.stringify first
-  // await push_one(user {k: 200})
-  const out = await get_user(user);
-  console.log(out);
-  client.quit();
-}
-module.exports = { push_one, get_user };
-/* 
-!status [self|@someone|@a @b]
-  self:     get balance_hist vs all relevant others
-  @someone: get balance_hist between a and b (plus history?)
-  @a @b:    get balance_hist
-!list
-  get all users and balance_hist?
-!get @
-!settle
-`;
-*/
+async function test() {}
 
-//   betObject = {
-//     type: "choose1",
-//     originalMessage: originalMessageObj,
-//     betOptions ["yes", "no", "pnastayyy"],
-//     participants [
-//        {
-//          betOptionIdx,
-//          wagerAmount,
-//          fullMessageObj
-//        } ...
-//      ]
-// }
+module.exports = {
+  push_resolved_bet,
+  get_resolved_bets,
+  get_all_user_keys: async () => {
+    const fake_key_list = ["@aaron", "@kevin"];
+    return Promise.resolve({
+      data: fake_key_list,
+      out_str: "all participants: " + fake_key_list.join(", "),
+    });
+  },
+  get_user_data: async (user_key) => {
+    return Promise.resolve({ data: [], out_str: `[data of ${key}]` });
+  },
+  get_relative_data: async (user_a_key, user_b_key) => {
+    return Promise.resolve({
+      data: [],
+      out_str: `${user_a} owes ${user_b}:\nTODO`,
+    });
+  },
+  delete_all_bets: async () => {db.redis.del(GLOBAL_BETS_KEY)}
+};
