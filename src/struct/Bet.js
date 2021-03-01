@@ -32,9 +32,9 @@ module.exports = class {
     const NUMERIC_REGEXP = /[-]{0,1}[\d]*[.]{0,1}[\d]+/g;
 
     let potentialBetValues = responseText.match(NUMERIC_REGEXP);
-    let betValue = 1;
+    this.betValue = 1;
     if (potentialBetValues && potentialBetValues.length > 0) {
-      betValue = potentialBetValues[0];
+      this.betValue = potentialBetValues[0];
     } else {
       // no bet value, default to 1?
     }
@@ -71,7 +71,7 @@ module.exports = class {
       }
       if (this.variant == "truefalse") {
         this.sendFunc(
-          `${user.username} bets ${betValue} `
+          `${user.username} bets ${this.betValue} `
            + `${_.shuffle(["smackeroos", "dingus dollars", "dollars"])[0]} `
            + `${responseIndex == 0 ? "for" : "against"} ${content}`, "confirmation");
       }
