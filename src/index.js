@@ -9,7 +9,8 @@ async function test(){
   console.log("Getting user keys (fake data) and all bets")
   const users = await api.get_all_user_keys();
   const bets = await api.get_resolved_bets();
-  console.log(users, "\n", bets)
+  console.log(users, "\n", bets.out_str)
+
 }
 test();
 const {
@@ -36,6 +37,10 @@ client.commands.set(command.name, command);
  */
 let currentBet = null;
 let currentBetMessage = null;
+function resetBet() {
+  currentBet = null;
+  currentBetMessage = null;
+}
 
 client.once("ready", () => console.log("Discord bot listening"));
 client.on("message", (message) => {
@@ -63,14 +68,44 @@ client.on("message", (message) => {
             if (type == "initial") currentBetMessage = m;
             if (type == "closed") {
               const filter = (reaction, user) => !user.bot;
-              const collector = m.createReactionCollector(filter, {time:4000});
-
+              const collector = m.createReactionCollector(filter);
+              m.react("👍");
+              m.react("👎");
               collector.on("collect", (reaction, user) => {
-                m.channel.send("got reaction");
+                console.log("got reaction " + reaction.emoji.name);
+                if (user.id in currentBet.participants) {
+                  currentBet.participants[user.id].voted = true;
+                  currentBet.participants[user.id].outcomeVote = (reaction.emoji.name == "👍") ? 0 : 1;
+                }
+
+                let allUsersVoted = true;
+                let previousParticipantPosition = -1;
+                let participantsAgree = true;
+                for (let id in currentBet.participants) {
+                  let participant = currentBet.participants[id];
+                  if (participant["voted"] === undefined || !participant["voted"]) {
+                    allUsersVoted = false;
+                    break;
+                  }
+                  if (previousParticipantPosition == -1) {
+                    previousParticipantPosition = participant.outcomeVote;
+                  }
+                  else if (previousParticipantPosition != participant.outcomeVote) {
+                    participantsAgree = false;
+                    break;
+                  }
+                }
+
+                if (allUsersVoted && participantsAgree) {
+                  collector.stop();
+                }
               });
 
-              collector.on("end", (collected) => {
+              collector.on("end", async (collected) => {
                 // resetBet();
+                m.channel.send("everyone agrees on: " + currentBet.content + "\nis: " + currentBet.betOptions[currentBet.getBetOutcome()]);
+                await api.push_resolved_bet(currentBet);
+                resetBet();
               });
             }
           })

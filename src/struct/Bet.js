@@ -8,7 +8,7 @@ module.exports = class {
   constructor(originalMessageContent, user, sendFunc) {
     this.sendFunc = sendFunc
 
-      this.time = 6000;
+      this.time = 60000;
     this.content = originalMessageContent;
  
     this.sendFunc(`${this.content} - ${user.username}.\n`
@@ -23,8 +23,9 @@ module.exports = class {
     this.variant = "truefalse";
     this.type = "choose1";
     this.originalMessage = "";
-    this.betOptions = ["trueXXX", "falseXXX"];
+    this.betOptions = ["TRUE", "FALSE"];
     this.participants = {};
+    this.channelId = "";
   }
 
   processResponse(responseText, user) {
@@ -40,14 +41,14 @@ module.exports = class {
     let responseIndex = -1;
     for (let i = 0; i < this.betOptions.length; i++) {
       let option = this.betOptions[i];
-      if (option == "trueXXX") {
+      if (option == "TRUE") {
         for (let affirmative of affirmatives) {
           if (responseText.indexOf(affirmative) >= 0) {
             responseIndex = 0;
             break;
           }
         }
-      } else if (option == "falseXXX") {
+      } else if (option == "FALSE") {
         for (let negative of negatives) {
           if (responseText.indexOf(negative) >= 0) {
             responseIndex = 1;
@@ -77,5 +78,9 @@ module.exports = class {
     }
   }
 
-  addReaction() {}
+  getBetOutcome() {
+    for (let key in this.participants) {
+      return this.participants[key].outcomeVote;
+    }
+  }
 }
