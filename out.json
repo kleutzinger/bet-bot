@@ -1,0 +1,29 @@
+[
+  {
+    "time": 60000,
+    "content": " this is the first bet in the database",
+    "variant": "truefalse",
+    "type": "choose1",
+    "originalMessage": "",
+    "betOptions": ["TRUE", "FALSE"],
+    "participants": {
+      "295639034024165377": {
+        "id": "295639034024165377",
+        "username": "pork",
+        "position": 0,
+        "betValue": 1,
+        "voted": true,
+        "outcomeVote": 0
+      },
+      "375853833466675232": {
+        "id": "375853833466675232",
+        "username": "KevbotSSBM",
+        "position": 0,
+        "betValue": "87340287402938740298374092837402983740293874029837402983740298374092837409283740298374093287402983740293874093287402987402938740298472039874",
+        "voted": true,
+        "outcomeVote": 0
+      }
+    },
+    "channelId": ""
+  }
+]
