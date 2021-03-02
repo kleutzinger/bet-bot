@@ -1,13 +1,17 @@
 require("dotenv").config();
 const _ = require("lodash");
 var redis = require("promise-redis")();
-const client = redis.createClient(process.env.DOKKU_REDIS_AQUA_URL);
-console.log(`connected to redis at ${process.env.DOKKU_REDIS_AQUA_URL.split("@")[1]}`);
+let DB_URL = process.env.DOKKU_REDIS_AQUA_URL;
+if (process.env.NODE_ENV === "development") {
+  console.log("connecting to staging url");
+  DB_URL = process.env.STAGING_REDIS_URL;
+}
+const client = redis.createClient(DB_URL);
+console.log(`connected to redis at ${DB_URL.split("@")[1]}`);
 
 client.on("error", function (err) {
   console.error("Redis Client Error: " + err);
 });
-
 
 async function push_list(key, value) {
   // apends single value to end of list
@@ -46,7 +50,7 @@ async function get_key(key) {
 }
 
 async function test() {}
-test()
+test();
 
 async function startup() {
   const startup_count = await client.incr("startups");

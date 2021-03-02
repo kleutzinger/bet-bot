@@ -10,9 +10,8 @@ async function test() {
   const users = await api.get_all_user_keys();
   const bets = await api.get_resolved_bets();
   console.log(users, "\n", bets.out_str)
-
 }
-test();
+
 const {
   readdirSync
 } = require("fs");
