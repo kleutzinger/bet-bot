@@ -1,5 +1,6 @@
 const db = require("./db.js");
 const GLOBAL_BETS_KEY = "global_bets";
+const _ = require('lodash')
 
 async function push_resolved_bet(betObj) {
   try {
@@ -24,13 +25,22 @@ async function get_resolved_bets() {
   }
 }
 
-async function test() {}
+async function test() {
+  const bets = (await get_resolved_bets()).data;
+  const fs = require('fs')
+  fs.writeFileSync('out.json', JSON.stringify(bets))
+  console.log(JSON.stringify(bets));
+}
+
 
 module.exports = {
   push_resolved_bet,
   get_resolved_bets,
   get_all_user_keys: async () => {
-    const fake_key_list = ["@aaron", "@kevin"];
+    const all_bets = await get_resolved_bets();
+    const fake_key_list = ["375853833466675232",  "295639034024165377"];
+
+
     return Promise.resolve({
       data: fake_key_list,
       out_str: "all participants: " + fake_key_list.join(", "),

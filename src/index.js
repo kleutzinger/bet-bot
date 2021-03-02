@@ -54,7 +54,7 @@ client.on("message", (message) => {
     }
   }
 
-  if (message.content.startsWith("!bet")) {
+  if (message.content.startsWith("!!bet")) {
     if (currentBetMessage != null) {
       message.channel.send("hey there's already a bet going");
       return;

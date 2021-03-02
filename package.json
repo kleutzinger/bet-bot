@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node .",
     "watch": "nodemon start",
-    "test_api": "node src/api/api.js"
+    "test_api": "node src/api/api.js",
+    "stats": "node src/api/stats.js"
   },
   "dependencies": {
     "discord.js": "^12.3.1",
