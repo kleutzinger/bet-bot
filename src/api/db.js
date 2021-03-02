@@ -2,7 +2,7 @@ require("dotenv").config();
 const _ = require("lodash");
 var redis = require("promise-redis")();
 const client = redis.createClient(process.env.DOKKU_REDIS_AQUA_URL);
-console.log(`connected to redis at ${process.env.REDIS_URL.split("@")[1]}`);
+console.log(`connected to redis at ${process.env.DOKKU_REDIS_AQUA_URL.split("@")[1]}`);
 
 client.on("error", function (err) {
   console.error("Redis Client Error: " + err);
