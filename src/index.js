@@ -1,5 +1,5 @@
 require("dotenv").config();
-
+const DPFX = process.env.DISCORD_PREFIX;
 const _ = require("lodash");
 
 const api = require("./api/api.js");
@@ -48,12 +48,12 @@ client.once("ready", () => console.log("Discord bot listening"));
 client.on("message", (message) => {
   // ***************** custom code starts here *********************************************
 
-  if (message.content.startsWith("!mystats")) {
+  if (message.content.startsWith(DPFX + "mystats")) {
     stats.get_user_data(message.author.id).then( (s) => message.channel.send(s) );
   }
 
   if (currentBet != null) {
-    if (message.content.startsWith("!vote")) {
+    if (message.content.startsWith(DPFX + "vote")) {
       let content = message.content
         .slice(6, message.content.length);
       // if (message.reference != null
@@ -62,7 +62,7 @@ client.on("message", (message) => {
       currentBet.processResponse(content, message.author);
     }
     // if (message.content.startsWith("!close") && voteMaster === message.author.id) {
-    if (message.content.startsWith("!close")) {
+    if (message.content.startsWith(DPFX + "close")) {
       message.channel.send(`votes are closed! all voters must react either 👍 or 👎 to confirm the results of the bet.\n${currentBet.content}`)
       .then((m) => {
         const filter = (reaction, user) => !user.bot;
@@ -108,7 +108,7 @@ client.on("message", (message) => {
       }
     }
 
-    if (message.content.startsWith("!!bet")) {
+    if (message.content.startsWith(DPFX + "bet")) {
       if (currentBetMessage != null) {
         message.channel.send("hey there's already a bet going");
         return;
