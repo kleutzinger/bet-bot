@@ -12,13 +12,13 @@ module.exports = class {
     this.content = originalMessageContent;
  
     this.sendFunc(`${this.content} - ${user.username}.\n`
-       + `respond "yes" or "no" to this message with a number to join the betting pool.`
-       + `\nvotes close in ${this.time / 1000} seconds`, "initial");
+       + `use !vote yes or !vote no with a number to join the betting pool.`
+       + `\nvote initator must use !close to end betting`, "initial");
 
-    setTimeout(function () {
-      sendFunc(`votes are closed! all voters must react either 👍 or 👎 to confirm the results of the bet.`
-        , "closed");
-    }, this.time);
+    // setTimeout(function () {
+    //   sendFunc(`votes are closed! all voters must react either 👍 or 👎 to confirm the results of the bet.`
+    //     , "closed");
+    // }, this.time);
 
     this.variant = "truefalse";
     this.type = "choose1";
@@ -61,15 +61,16 @@ module.exports = class {
       }
     }
     
+    betValue = Math.max(0.01, parseFloat(betValue));
     if (responseIndex != -1) {
-      if (!(user.id in this.participants)) {
+      // if (!(user.id in this.participants)) {
         this.participants[user.id] = {
           id: user.id,
           username: user.username,
           position: responseIndex,
           betValue: betValue
         }
-      }
+      // }
       if (this.variant == "truefalse") {
         this.sendFunc(
           `${user.username} bets ${betValue} `

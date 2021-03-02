@@ -4,24 +4,60 @@ const AARON = "295639034024165377";
 const KEVIN = "375853833466675232";
 async function get_balance(A, B) {}
 
-async function run_all(bets) {
-  const balance_table = {};
+const id_cache = {};
+
+function run_all(bets) {
+  let balance_table = {};
   for (const bet of bets) {
-    run_single(bet);
+    let balance_delta = run_single(bet);
+    balance_table = combine_balance_deltas(balance_table, balance_delta);
   }
+
+  console.log("final balance for everyone");
+  console.table(balance_table);
+  return balance_table;
 }
 
-async function get_user_data(user_id, bets) {
-  const balance_table = {};
-  const all_bets = (await api.get_resolved_bets()).data;
-  for (const bet of all_bets) {
-    if (user_id in bet.participants) {
-      console.log(run_single(bet));
+async function get_user_data(user_id) {
+  try {
+    // const balance_table = {};
+    const all_bets = (await api.get_resolved_bets()).data;
+    const balance_table = run_all(all_bets);
+
+    const userBalance = balance_table[user_id];
+    let finalString = "**" + id_cache[user_id] + "**:\n";
+    for (let id in userBalance) {
+      if (id == user_id) continue;
+      finalString += id_cache[id] + " " + (parseInt(userBalance[id] * 100)/ 100) + "\n";
+    }
+    return finalString;
+  }
+  catch (e) {
+    return "sumn broke " + e;
+  }
+  // for (const bet of all_bets) {
+  //   if (user_id in bet.participants) {
+  //     console.log(run_single(bet));
+  //   }
+  // }
+}
+
+function combine_balance_deltas(a, b) {
+  let all_present_ids = {};
+  let c = {};
+  for (let id in a) all_present_ids[id] = true;
+  for (let id in b) all_present_ids[id] = true;
+
+  for (let id1 in all_present_ids) {
+    c[id1] = {};
+    for (let id2 in all_present_ids) {
+      c[id1][id2] = _.get(a, `${id1}.${id2}`, 0) + _.get(b, `${id1}.${id2}`, 0);
     }
   }
+  return c;
 }
 
-async function run_single(bet) {
+function run_single(bet) {
   let num_options = bet.betOptions.length;
   let participants = bet.participants;
   let balance_table = {};
@@ -32,18 +68,38 @@ async function run_single(bet) {
   // aaron payout =  (aaron / total ) * total_pool
   // goal aaron money delta for this betOptions
   let winners = _.filter(participants, (p) => {
+    id_cache[p.id] = p.username; // update user id cache for the lazy !!!FIX THIS KEVIN
     return p.position === p.outcomeVote;
   });
   let losers = _.filter(participants, (p) => {
     return p.position !== p.outcomeVote;
   });
-  let winner_payout_ratios = {};
+
+  let winnersTotalContributions = 0;
+  for (let winner of winners) {
+    winnersTotalContributions += winner.betValue;
+  }
 
   for (let winner of winners) {
-    console.table(winner);
+    let winnerBalanceDict = {};
+    balance_table[winner.id] = winnerBalanceDict;
+    for (let loser of losers) {
+      let balance_delta =
+        winner.betValue / winnersTotalContributions * loser.betValue;
+      winnerBalanceDict[loser.id] = balance_delta;
+    }
   }
-  console.log("winners:", winners);
-  console.log("losers", losers);
+
+  for (let loser of losers) {
+    let loserBalanceDict = {};
+    balance_table[loser.id] = loserBalanceDict;
+    for (let winner of winners) {
+      let balance_delta = - balance_table[winner.id][loser.id];
+      loserBalanceDict[winner.id] = balance_delta;
+    }
+  }
+
+  return balance_table;
 }
 
 const examples = [
@@ -131,4 +187,12 @@ const examples = [
   },
 ];
 
-run_all(examples);
+// (async () => {
+//   const all_bets = (await api.get_resolved_bets()).data;
+//   console.log(JSON.stringify(all_bets, null, 2));
+//   run_all(all_bets);
+// })();
+
+module.exports = {
+  get_user_data,
+};
